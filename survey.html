@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Customer Survey / 顧客アンケート</title>
+  <style>
+    :root{--bg:#f7f7fb;--card:#fff;--text:#1f2937;--muted:#6b7280;--accent:#3b82f6;--radius:16px;--shadow:0 10px 25px rgba(0,0,0,.08)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP","PingFang SC","Hiragino Kaku Gothic ProN","Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:880px;margin:40px auto;padding:0 16px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    h1{font-size:clamp(20px,3vw,28px);margin:0}
+    .lang{display:flex;gap:8px;flex-wrap:wrap}
+    .lang button{padding:8px 12px;border:1px solid #e5e7eb;background:#fff;border-radius:999px;cursor:pointer}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+    .row{margin:18px 0}
+    label.title{display:block;font-weight:600;margin-bottom:8px;font-size:18px}
+    .muted{color:var(--muted);font-size:14px}
+    .emoji-scale{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:32px;cursor:pointer;user-select:none}
+    .emoji{transition:.2s transform, .2s opacity;opacity:.6}
+    .emoji.active{transform:scale(1.2);opacity:1}
+    .emoji:active{transform:scale(1.08)}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+    .btn{padding:12px 16px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+    .toast{display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:#ecfdf5;color:#065f46}
+    .toast.show{display:block}
+    .footer{margin:20px 0;color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1 id="t_title">顧客アンケート</h1>
+      <div class="lang" aria-label="language switcher">
+        <button data-lang="ja" aria-pressed="true">日本語</button>
+        <button data-lang="en">English</button>
+        <button data-lang="ko">한국어</button>
+        <button data-lang="zht">繁體中文</button>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="row"><div class="muted" id="t_intro">ご利用ありがとうございます。サービス向上のため、1分だけお時間をください。</div></div>
+
+      <div class="row">
+        <label class="title" id="t_fun">🎉 楽しさ / Fun</label>
+        <div class="emoji-scale" id="funScale" role="radiogroup" aria-label="Fun rating">
+          <span class="emoji" data-v="1" aria-label="1">😞</span>
+          <span class="emoji" data-v="2" aria-label="2">😐</span>
+          <span class="emoji" data-v="3" aria-label="3">🙂</span>
+          <span class="emoji" data-v="4" aria-label="4">😃</span>
+          <span class="emoji" data-v="5" aria-label="5">🤩</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <label class="title" id="t_taste">🍜 美味しさ / Deliciousness</label>
+        <div class="emoji-scale" id="tasteScale" role="radiogroup" aria-label="Deliciousness rating">
+          <span class="emoji" data-v="1" aria-label="1">😞</span>
+          <span class="emoji" data-v="2" aria-label="2">😐</span>
+          <span class="emoji" data-v="3" aria-label="3">🙂</span>
+          <span class="emoji" data-v="4" aria-label="4">😃</span>
+          <span class="emoji" data-v="5" aria-label="5">🤩</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <label class="title" id="t_consent_title">データ同意</label>
+        <label class="muted"><input id="consent" type="checkbox" /> <span id="t_consent">匿名で集計します。送信で利用規約に同意します。</span></label>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="submitBtn">送信</button>
+      </div>
+
+      <div class="toast" id="toast">ご回答ありがとうございました！</div>
+      <div class="footer" id="t_footer">このフォームはオフラインでも動作し、データは端末内（ブラウザ）に保存されます。</div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    // i18n dictionary
+    const dict={
+      ja:{t_title:'顧客アンケート',t_intro:'ご利用ありがとうございます。サービス向上のため、1分だけお時間をください。',t_fun:'🎉 楽しさ / Fun',t_taste:'🍜 美味しさ / Deliciousness',t_consent_title:'データ同意',t_consent:'匿名で集計します。送信で利用規約に同意します。',t_footer:'このフォームはオフラインでも動作し、データは端末内（ブラウザ）に保存されます。',btn_submit:'送信',toast:'ご回答ありがとうございました！'},
+      en:{t_title:'Customer Survey',t_intro:'Thank you for visiting! Please take a moment to rate your experience.',t_fun:'🎉 Fun',t_taste:'🍜 Deliciousness',t_consent_title:'Data Consent',t_consent:'Anonymous results only. By submitting, you agree to the terms.',t_footer:'This form works offline. Data is stored locally (browser).',btn_submit:'Submit',toast:'Thank you for your feedback!'},
+      ko:{t_title:'고객 설문',t_intro:'이용해 주셔서 감사합니다. 더 나은 서비스를 위해 1분만 평가해 주세요.',t_fun:'🎉 재미 / Fun',t_taste:'🍜 맛있음 / Deliciousness',t_consent_title:'데이터 동의',t_consent:'익명으로 집계합니다. 전송 시 이용 약관에 동의한 것으로 간주됩니다.',t_footer:'이 폼은 오프라인에서도 동작하며 데이터는 브라우저에 저장됩니다.',btn_submit:'제출',toast:'소중한 의견 감사합니다!'},
+      zht:{t_title:'顧客問卷',t_intro:'感謝您的光臨！為了提升服務，請花 1 分鐘評分。',t_fun:'🎉 有趣程度 / Fun',t_taste:'🍜 美味程度 / Deliciousness',t_consent_title:'資料同意',t_consent:'僅做匿名統計。提交即表示同意使用條款。',t_footer:'本表單可離線使用，資料儲存在本機瀏覽器。',btn_submit:'提交',toast:'感謝您的填寫！'}
+    };
+    const $=id=>document.getElementById(id);
+    function setLang(lang){
+      const t=dict[lang]||dict.ja;
+      for(const k in t){const el=$(k); if(el) el.textContent=t[k];}
+      document.querySelector('#submitBtn').textContent=t.btn_submit;
+      localStorage.setItem('survey_lang',lang);
+      document.querySelectorAll('.lang button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===lang)));
+      document.documentElement.lang = (lang==='zht' ? 'zh-Hant' : lang);
+    }
+    document.querySelectorAll('.lang button').forEach(btn=>btn.addEventListener('click',()=>setLang(btn.dataset.lang)));
+
+    // Emoji rating
+    let funVal=0,tasteVal=0;
+    function bindScale(id,setter){
+      const emojis=document.querySelectorAll(`#${id} .emoji`);
+      emojis.forEach(e=>e.addEventListener('click',()=>{
+        const v=Number(e.dataset.v);
+        setter(v);
+        emojis.forEach(x=>x.classList.toggle('active',Number(x.dataset.v)===v));
+      }));
+    }
+    bindScale('funScale',v=>funVal=v);
+    bindScale('tasteScale',v=>tasteVal=v);
+
+    // Storage
+    const KEY='ramen_survey_v7';
+    const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return []}};
+    const save=(rows)=>{try{localStorage.setItem(KEY,JSON.stringify(rows))}catch(e){} };
+
+    setLang(localStorage.getItem('survey_lang')||'ja');
+
+    $('submitBtn').addEventListener('click',()=>{
+      if(!funVal||!tasteVal){alert('「楽しさ」と「美味しさ」を選んでください / Please rate both. / 두 항목을 모두 선택하세요 / 請評分兩項');return;}
+      if(!$('consent').checked){alert('「データ同意」にチェックしてください / Please check consent / 동의에 체크해 주세요 / 請勾選資料同意');return;}
+      const row={ts:new Date().toISOString(),lang:localStorage.getItem('survey_lang')||'ja',tanoshisa:funVal,oishisa:tasteVal,consent:'yes'};
+      const rows=load(); rows.push(row); save(rows);
+      funVal=0; tasteVal=0; document.querySelectorAll('.emoji').forEach(e=>e.classList.remove('active')); $('consent').checked=false;
+      const t=dict[localStorage.getItem('survey_lang')||'ja']; const toast=$('toast'); toast.textContent=t.toast; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2000);
+    });
+  })();
+  </script>
+</body>
+</html>
